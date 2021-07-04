@@ -1,0 +1,73 @@
+import codecademylib
+import pandas as pd
+
+ad_clicks = pd.read_csv('ad_clicks.csv')
+print(ad_clicks.head(10))
+
+#Counting numbers of views from each source
+ad_clicks_views = ad_clicks.groupby("utm_source").user_id.count().reset_index()
+print(ad_clicks_views)
+
+#Checks if the person clicked the ad
+ad_clicks["is_click"] = ~ad_clicks.ad_click_timestamp.isnull()
+print(ad_clicks.head())
+
+#Sorts by the source and if the person clicked the ad
+clicks_by_source = ad_clicks.groupby(["utm_source", "is_click"]).user_id.count().reset_index()
+print(clicks_by_source)
+
+#Pivot the table so that is clearer
+clicks_pivot = clicks_by_source.pivot(
+  columns="is_click",
+  values="user_id",
+  index="utm_source"
+).reset_index()
+print(clicks_pivot)
+
+#Calculates the percentage of clicks on the ad
+clicks_pivot["percent_clicked"] = clicks_pivot[True] / (clicks_pivot[False] + clicks_pivot[True]) * 100
+print(clicks_pivot)
+
+#Sorts by test A and test B to see if they were tested on the same amount of people
+num_A_B = ad_clicks.groupby("experimental_group").user_id.count().reset_index()
+print(num_A_B)
+
+#Sorts by if they clicked on the ad
+num_A_B_is_click = ad_clicks.groupby(["experimental_group", "is_click"]).user_id.count().reset_index()
+print(num_A_B_is_click)
+
+#Divide the dataframe into two, one for test A and one for test B
+a_clicks = ad_clicks[ad_clicks.experimental_group == "A"]
+b_clicks = ad_clicks[ad_clicks.experimental_group == "B"]
+print(a_clicks.head())
+print(b_clicks.head())
+
+#Wants to see the difference per day
+a_clicks_day = a_clicks.groupby(["day", "is_click"]).user_id.count().reset_index()
+b_clicks_day = b_clicks.groupby(["day", "is_click"]).user_id.count().reset_index()
+print(a_clicks_day)
+print(b_clicks_day)
+
+#Pivot the two tables
+a_clicks_day_pivot = a_clicks_day.pivot(
+  columns="is_click",
+  index="day",
+  values="user_id"
+)
+print(a_clicks_day_pivot)
+
+b_clicks_day_pivot = b_clicks_day.pivot(
+  columns="is_click",
+  index="day",
+  values="user_id"
+)
+print(b_clicks_day_pivot)
+
+#Finds the percentage of people clicking the ad per day
+a_clicks_day_pivot["percentage"] = a_clicks_day_pivot[True] / (a_clicks_day_pivot[False] + a_clicks_day_pivot[True]) * 100
+b_clicks_day_pivot["percentage"] = b_clicks_day_pivot[True] / (b_clicks_day_pivot[False] + b_clicks_day_pivot[True]) * 100
+print(a_clicks_day_pivot)
+print(b_clicks_day_pivot)
+
+#Can see from the result that more people clicked ad A
+print("Ad A is recommended")
